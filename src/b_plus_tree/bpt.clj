@@ -272,14 +272,17 @@
        (let [subnode-writer
                (fn [p]
                  (when (contains? p :data?)
-                  (.append writer (format "\"%s\" [label = \"%s\"];\n" (.hashCode p) (clojure.string/join "-"
-                    (if (empty? (:markers p))
-                      [(.hashCode p)]
-                      (:markers p))) )))
+                  (.append writer (format "\"%s\" [label = \"%s\"];\n"
+                    (.hashCode p)
+                    (clojure.string/join "-"
+                      (if (empty? (:markers p))
+                        [(.hashCode p)]
+                        (:markers p))) )))
                    (mapv (fn [n]
-                     (.append writer (format "\"%s\"->\"%s\"; \n" (.hashCode p) (if (contains? n :data?)
-                                                                                  (.hashCode n)
-                                                                                  (:key n))))
+                     (.append writer (format "\"%s\"->\"%s\"; \n" (.hashCode p)
+                        (if (contains? n :data?)
+                          (.hashCode n)
+                          (:key n))))
                      n)
                      (:nodes p)))]
 
