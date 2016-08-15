@@ -65,7 +65,13 @@
   ))
 
 (defn split-inter [node]
+  (log/info node)
+  (let [[left right] (slice node b2!)
+        marker (-> node :markers (slice b2!) second first)]
+    ; (log/info "Split from " marker)
+    [left  {:marker marker  :nodes right }]
 
+  )
   )
 
 (defn update-path
@@ -80,10 +86,15 @@
           node (peek stack')
           rest-of-stack (pop stack')
           node' (assoc node :nodes (assoc (:nodes node) idx n ))
-          _ (marker-overflow? node')]
-        (if (empty? rest-of-stack)
-          node'
-          (recur (inc i) node' (pop path') rest-of-stack)))))
+          overflow? (marker-overflow? node')]
+        (when overflow?
+          (let [inter-node (split-inter node')]
+            (log/info "Overflow markers" inter-node)
+          ))
+
+          (if (empty? rest-of-stack)
+            node'
+            (recur (inc i) node' (pop path') rest-of-stack)))))
 
 (defn insert
   "Inserts an element into B+ tree"
