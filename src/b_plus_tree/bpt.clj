@@ -2,7 +2,6 @@
   (:require [taoensso.timbre :as log]
             [b-plus-tree.util :refer [charset]]))
 (use 'clojure.repl)
-
 (try
     (require '[clojure.tools.namespace.repl :refer [refresh]])
     (catch Exception e nil))
@@ -22,7 +21,6 @@
 (def b2! (-> (/ branching-factor 2) int))
 (def history (atom []))
 (def gt? (comp pos? compare))
-
 (def lt? (comp neg? compare))
 
 (declare split )
@@ -274,14 +272,17 @@
        (let [subnode-writer
                (fn [p]
                  (when (contains? p :data?)
-                  (.append writer (format "\"%s\" [label = \"%s\"];\n" (.hashCode p) (clojure.string/join "-"
-                    (if (empty? (:markers p))
-                      [(.hashCode p)]
-                      (:markers p))) )))
+                  (.append writer (format "\"%s\" [label = \"%s\"];\n"
+                    (.hashCode p)
+                    (clojure.string/join "-"
+                      (if (empty? (:markers p))
+                        [(.hashCode p)]
+                        (:markers p))) )))
                    (mapv (fn [n]
-                     (.append writer (format "\"%s\"->\"%s\"; \n" (.hashCode p) (if (contains? n :data?)
-                                                                                  (.hashCode n)
-                                                                                  (:key n))))
+                     (.append writer (format "\"%s\"->\"%s\"; \n" (.hashCode p)
+                        (if (contains? n :data?)
+                          (.hashCode n)
+                          (:key n))))
                      n)
                      (:nodes p)))]
 
@@ -294,6 +295,7 @@
     (node-iter tree dot)
     (.append dot "}")
     (spit f dot)
+    (clojure.java.shell/sh "dot" "-Tsvg" f "-O")
   ))
 
 
