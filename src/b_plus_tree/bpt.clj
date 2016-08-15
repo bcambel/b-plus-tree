@@ -2,7 +2,6 @@
   (:require [taoensso.timbre :as log]
             [b-plus-tree.util :refer [charset]]))
 (use 'clojure.repl)
-
 (try
     (require '[clojure.tools.namespace.repl :refer [refresh]])
     (catch Exception e nil))
@@ -22,7 +21,6 @@
 (def b2! (-> (/ branching-factor 2) int))
 (def history (atom []))
 (def gt? (comp pos? compare))
-
 (def lt? (comp neg? compare))
 
 (declare split )
@@ -294,6 +292,7 @@
     (node-iter tree dot)
     (.append dot "}")
     (spit f dot)
+    (clojure.java.shell/sh "dot" "-Tsvg" f "-O")
   ))
 
 
