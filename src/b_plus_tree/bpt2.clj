@@ -10,7 +10,7 @@
 (defn explain-error [e]
   (.printStackTrace e))
 
-(def branching-factor 4)
+(def ^:dynamic branching-factor 4)
 (def b2! (/ branching-factor 2))
 (def history (atom []))
 (def gt? (comp pos? compare))
@@ -40,7 +40,7 @@
   (let [marker-count (count markers)]
     (loop [i 0]
       (when-let [current (when-not (empty? markers )(nth markers i))]
-        (log/infof "Compare#%d %s vs " i key current)
+        ; (log/sometimes 0.2 (log/infof "Compare#%d %s vs " i key current))
         (if (lt? key current )
           i
           (if (< (inc i) marker-count)
@@ -48,7 +48,7 @@
             (inc i)))))))
 
 (defn slice [nodes loc]
-  (log/info "Slice nodes" loc)
+  ; (log/info "Slice nodes" loc)
   [ (subvec (vec nodes) 0 loc)
     (subvec (vec nodes) loc)]
   )
@@ -60,7 +60,8 @@
 (defn marker-overflow? [node]
   (let [overflow? (> (count (:markers node)) (dec branching-factor))]
   (when-not (= :leaf (:t node ))
-    (log/info "Node has marker overflow? " overflow? (:markers node)))
+    ; (log/info "Node has marker overflow? " overflow? (:markers node))
+    )
     overflow?
   ))
 
@@ -78,21 +79,21 @@
         [lmarkers rmarkers] (-> node :markers (slice b2!) )
         marker (-> rmarkers first)
         rmarkers (vec (rest rmarkers))
-        _ (log/info "RMARKERS!!!!" rmarkers rnodes)
+        ; _ (log/info "RMARKERS!!!!" rmarkers rnodes)
         split-result {:elected-marker marker
                       :left (new-inter lnodes lmarkers)
                       :right (new-inter rnodes rmarkers)}]
-    (log/info "Split result " split-result)
+    ; (log/info "Split result " split-result)
     split-result))
 
 (defn update-path
   [leaf path stack]
-  (swap! history conj stack)
-  (log/info "Updating path" leaf path )
+  ; (swap! history conj stack)
+  ; (log/info "Updating path" leaf path )
   (loop [i 0 n leaf
          path' path
          stack' stack]
-    (log/info (count path') (count stack'))
+    ; (log/info (count path') (count stack'))
     (let [idx (or (peek path') 0)
           node (peek stack')
           rest-of-stack (vec (pop stack'))
@@ -118,9 +119,9 @@
 
                 rest-of-stack' (if max-root rest-of-stack
                                   (-> rest-of-stack pop (conj parent')))
-                _ (swap! history concat [left parent'])
+                ; _ (swap! history concat [left parent'])
                 node' left]
-            (log/info "Overflow markers" left)
+            ; (log/info "Overflow markers" left)
             (if max-root
               (assoc parent' :nodes (vec (concat [node'] (:nodes parent') )))
               (recur (inc i) node' (vec (pop path')) rest-of-stack')))
@@ -140,18 +141,17 @@
           (loop [i 0
                 node tree
                 stack [] path []]
-              (log/infof "Insert path #%d %s %s" i (s/join "/" path) node)
+              ; (log/infof "Insert path #%d %s %s" i (s/join "/" path) node)
             (if (= (:t node) :leaf)
               [path node stack]
               (let [{:keys [t markers nodes]} node
                   loc (find-marker-loc markers k)
                   _ (when (and (not (= t :leaf)) (nil? loc))
                       (throw (ex-info "Cannot be nil" {:node node})))
-                  _ (log/info "Searching " markers k loc)
+                  ; _ (log/info "Searching " markers k loc)
                   node' (get nodes loc)
                   _ (when (nil? node')
-                      (throw (ex-info "Cannot be nil" {:nodes nodes})))
-                  ]
+                      (throw (ex-info "Cannot be nil" {:nodes nodes})))]
                 (when (<  i 100 )
                   (recur (inc i) node' (conj stack node) (conj path loc))))))]
 
