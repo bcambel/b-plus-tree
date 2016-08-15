@@ -99,23 +99,30 @@
           node' (assoc node :nodes (assoc (:nodes node) idx n ))
           overflow? (marker-overflow? node')]
         (if overflow?
-          (let [parent (peek rest-of-stack)
+          (let [max-root (empty? rest-of-stack)
+                parent (if (empty? rest-of-stack)
+                          {:markers [] :nodes [] :t :root}
+                          (peek rest-of-stack))
+                rest-of-stack (if (empty? rest-of-stack)
+                                ; [{:markers [] :nodes [] :t :root}]
+                                rest-of-stack
+                                rest-of-stack)
                 {:keys [elected-marker left right]} (split-inter node')
                 parent' (-> parent
                           (assoc :markers
                             (vec (sort (conj (:markers parent) elected-marker ))))
                           (assoc :nodes
                             (vec (sort-by #(-> % :markers first)
-                              ;; place it to the correct location
-                              ;; rather than adding to the end!!
                               (conj (:nodes parent) right)
                               ))))
-                rest-of-stack' (-> rest-of-stack pop (conj parent'))
-                _ (swap! history conj parent')
+
+                rest-of-stack' (if max-root rest-of-stack
+                                  (-> rest-of-stack pop (conj parent')))
+                _ (swap! history concat [left parent'])
                 node' left]
             (log/info "Overflow markers" left)
-            (if (empty? rest-of-stack)
-              node'
+            (if max-root
+              (assoc parent' :nodes (vec (concat [node'] (:nodes parent') )))
               (recur (inc i) node' (vec (pop path')) rest-of-stack')))
           (if (empty? rest-of-stack)
             node'
@@ -195,8 +202,8 @@
           ]} )
 
 ; (def r2 (test-data))
-(defn popsticle [max-el]
-  (let [starting (insert dep2 82 1)]
+(defn popsticle [tree start max-el]
+  (let [starting (insert tree start  1)]
     (loop [i 0 tree starting]
 
       (if (> i max-el)
