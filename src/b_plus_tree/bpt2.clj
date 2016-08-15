@@ -19,8 +19,8 @@
 {:key  nil
  :val nil}
 
-(defn new-leaf [nodes]
-{ :markers []
+(defn new-leaf [nodes & markers]
+{ :markers (or markers [])
   :t :leaf
   :nodes nodes })
 
@@ -66,10 +66,11 @@
 
 (defn split-inter [node]
   (log/info node)
-  (let [[left right] (slice node b2!)
-        marker (-> node :markers (slice b2!) second first)]
+  (let [[lnodes rnodes] (slice (:nodes node) b2!)
+        [lmarkers rmarkers] (-> node :markers (slice b2!) )
+        marker (-> rmarkers first)]
     ; (log/info "Split from " marker)
-    [left  {:marker marker  :nodes right }]
+    [(new-leaf lmarkers lnodes)  {:marker marker  :nodes rnodes }]
 
   )
   )
@@ -87,14 +88,28 @@
           rest-of-stack (pop stack')
           node' (assoc node :nodes (assoc (:nodes node) idx n ))
           overflow? (marker-overflow? node')]
-        (when overflow?
-          (let [inter-node (split-inter node')]
-            (log/info "Overflow markers" inter-node)
-          ))
+        (if overflow?
+          (let [parent (peek rest-of-stack)
+                [left right] (split-inter node')
+                parent' (-> parent
+                          (assoc :markers
+                            (conj (:markers parent) (:marker right) ))
+                          (assoc :nodes
+                            (conj (:nodes parent) (:nodes right)))
+                            )
+                rest-of-stack' (-> rest-of-stack pop (conj parent'))
+                _ (swap! history conj node')
+                _ (swap! history conj left)
+                node' left]
+            (log/info "Overflow markers" left)
+            (if (empty? rest-of-stack)
+              node'
+              (recur (inc i) node' (pop path') rest-of-stack))
+          )
 
           (if (empty? rest-of-stack)
             node'
-            (recur (inc i) node' (pop path') rest-of-stack)))))
+            (recur (inc i) node' (pop path') rest-of-stack))))))
 
 (defn insert
   "Inserts an element into B+ tree"
