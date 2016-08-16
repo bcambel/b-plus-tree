@@ -205,14 +205,11 @@
 (defn popsticle [tree start max-el]
   (let [starting (insert tree start  1)]
     (loop [i 0 tree starting]
-
       (if (> i max-el)
         tree
         (recur (inc i)
         (-> tree
-          (insert (+ i 83) 1)
-           )
-      )))))
+          (insert (+ i 83) 1)))))))
 
 (defn node-iter
   [root writer]
@@ -221,20 +218,21 @@
      (when-not (empty? nodes)
        (let [subnode-writer
                (fn [p]
-                 (when-not (= (:t p) :leaf)
-                  (.append writer (format "\"%s\" [label = \"%s\"];\n"
-                    (.hashCode p)
+                 (when (some #{:root :inter :leaf} [(:t p)])
+                  (.append writer (format "\"%s\" [label = \"%s\" shape= %s];\n"
+                    (str "Leaf #"(.hashCode p))
                     (clojure.string/join "-"
                       (if (empty? (:markers p))
-                        [(.hashCode p)]
-                        (:markers p))) )))
+                        [(str "Leaf #" (s/join "-" (map :k (:nodes p))))]
+                        (:markers p)))
+                    (if (= (:t p) :leaf) "box" "circle" ))))
                    (mapv (fn [n]
-                     (.append writer (format "\"%s\"->\"%s\"; \n" (.hashCode p)
+                     (.append writer (format "\"%s\"->\"%s\"; \n" (str "Leaf #"(.hashCode p))
                         (if-not (= (:t n) :l)
-                          (.hashCode n)
+                          (str "Leaf #" (.hashCode n))
                           (:k n))))
                      n)
-                     (:nodes p)))]
+                     (when-not (= :l (:t p)) (:nodes p))))]
 
             (recur (inc i)
                     (mapcat subnode-writer nodes))
